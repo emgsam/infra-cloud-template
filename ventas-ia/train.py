@@ -26,7 +26,7 @@ from importlib.metadata import version as version_lib
 
 import joblib
 
-from ventas import almacen
+from ventas import almacen, registro
 from ventas.datos import armar_compras, cargar_lineas, separar
 from ventas.modelo import decidir, entrenar, evaluar_bundle
 
@@ -122,6 +122,9 @@ def main(argv=None) -> dict:
     if decision == "activada":
         almacen.escribir(almacen.unir(a.modelos, "active.json"),
                          json.dumps({"version": version, "activada": metadata["fin"]}).encode())
+
+    if registro.registrar_entrenamiento(metadata, almacen.unir(a.modelos, version)):
+        print("registrado en Postgres (model_versions y trainings)", flush=True)
 
     print(f"F1 test {m['f1_test']:.3f} | train {m['f1_train']:.3f} | logística {m['f1_logistica_test']:.3f}"
           f" | base {m['f1_baseline_test']:.3f} | anterior {f1_anterior}", flush=True)

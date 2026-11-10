@@ -1,0 +1,24 @@
+# Imagen de la API de inferencia. No trae el modelo: lo carga al arrancar desde
+# MODELS_URI/active.json (gs:// en GKE con Workload Identity, carpeta en local).
+FROM python:3.12-slim
+
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+
+COPY requirements.txt requirements-api.txt ./
+RUN pip install --no-cache-dir -r requirements-api.txt
+
+COPY ventas/ ventas/
+COPY api.py .
+
+RUN useradd --create-home --uid 10001 api
+USER api
+
+ARG GIT_SHA=local
+ENV GIT_SHA=${GIT_SHA} MODELS_URI=/modelos PORT=8000
+EXPOSE 8000
+
+HEALTHCHECK --interval=5s --timeout=3s --start-period=20s --retries=10 \
+  CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=2)"]
+
+CMD ["python", "api.py"]

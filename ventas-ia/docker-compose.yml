@@ -1,0 +1,42 @@
+# Entorno local del TF: Postgres + trainer + API, sin nube.
+#   docker compose up -d postgres
+#   docker compose run --rm trainer --mes-corte 2026-08   # crea la primera versión
+#   docker compose up -d api                              # http://localhost:8000/docs
+# Los datos se leen de ../datos (no están en el repo) y las versiones quedan en ./modelos.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ventas
+      POSTGRES_USER: ventas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-solo-local}
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ventas -d ventas"]
+      interval: 3s
+      retries: 20
+
+  trainer:
+    build: {context: ., dockerfile: Dockerfile.trainer}
+    profiles: [trainer]  # solo corre con `docker compose run trainer`
+    environment:
+      DATABASE_URL: postgresql://ventas:${POSTGRES_PASSWORD:-solo-local}@postgres:5432/ventas
+    volumes:
+      - ../datos:/data:ro
+      - ./modelos:/modelos
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  api:
+    build: {context: ., dockerfile: Dockerfile.api}
+    environment:
+      DATABASE_URL: postgresql://ventas:${POSTGRES_PASSWORD:-solo-local}@postgres:5432/ventas
+      RELOAD_SECONDS: "10"
+    ports: ["8000:8000"]
+    volumes: [./modelos:/modelos]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+volumes:
+  pgdata:

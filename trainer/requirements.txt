@@ -1,0 +1,9 @@
+# Fijadas: en el Curso 1 Colab y la PC daban métricas distintas por la versión de
+# scikit-learn. Las versiones quedan guardadas también en cada metadata.json.
+scikit-learn==1.5.2
+numpy==2.1.3
+scipy==1.14.1
+pandas==2.2.3
+joblib==1.4.2
+python-calamine==0.3.1
+google-cloud-storage==2.18.2
